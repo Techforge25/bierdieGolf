@@ -38,7 +38,14 @@ class ClubEditModal extends GetView<ClubEditController> {
           return Text("No admins available", style: AppTextStyles.bodySmall);
         }
         final admins = snapshot.data!.docs;
-        controller.adminCount.value = admins.length;
+        if (controller.adminCount.value != admins.length) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!context.mounted) {
+              return;
+            }
+            controller.adminCount.value = admins.length;
+          });
+        }
         return Container(
           decoration: BoxDecoration(
             color: AppColors.flashyGreen,

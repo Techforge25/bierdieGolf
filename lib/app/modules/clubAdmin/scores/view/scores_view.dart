@@ -70,9 +70,21 @@ class ScoresView extends GetView<ScoresController> {
                         final status = (data['status'] ?? 'active').toString();
                         final date = (data['date'] ?? '').toString();
                         return GestureDetector(
-                          onTap: controller.selectedTab.value == 0
-                              ? controller.openTeamRank
-                              : controller.openPlayerRank,
+                          onTap: () {
+                            if (controller.selectedTab.value == 0) {
+                              controller.openTeamRank(
+                                name: name,
+                                status: status,
+                                date: date,
+                              );
+                            } else {
+                              controller.openPlayerRank(
+                                name: name,
+                                status: status,
+                                date: date,
+                              );
+                            }
+                          },
                           child: Container(
                             padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(

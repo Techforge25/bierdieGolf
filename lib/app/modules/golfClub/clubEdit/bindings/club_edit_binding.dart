@@ -26,6 +26,7 @@ class ClubEditBinding extends Bindings {
         initialLogoPath: initialLogoPath,
         initialLogoBase64: initialLogoBase64,
       ),
+      permanent: true,
     );
   }
 }

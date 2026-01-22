@@ -9,6 +9,8 @@ import 'package:bierdygame/app/theme/app_colors.dart';
 import 'package:bierdygame/app/theme/app_text_styles.dart';
 import 'package:bierdygame/app/widgets/custom_elevated_button.dart';
 import 'package:bierdygame/app/widgets/custom_form_field.dart';
+import 'package:bierdygame/app/widgets/custom_modal.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -29,6 +31,7 @@ class _NewGameViewState extends State<NewGameView> {
 
   bool showTeams = false;
   List<TeamModel> generatedTeams = [];
+  List<List<_TeamPlayer>> teamPlayers = [];
 
   @override
   void dispose() {
@@ -144,6 +147,8 @@ class _NewGameViewState extends State<NewGameView> {
                     return TeamCard(
                       team: generatedTeams[index],
                       teamIndex: index,
+                      onDelete: () => _removeTeam(index),
+                      onAdd: () => _showAddPlayersSheet(index),
                     );
                   },
                 ),
@@ -186,10 +191,12 @@ class _NewGameViewState extends State<NewGameView> {
         teams,
         (index) => TeamModel(
           name: "Team ${index + 1}",
+          playersCount: playersPerTeam,
           playersPerTeam: playersPerTeam,
           joinedPlayers: 0,
         ),
       );
+      teamPlayers = List.generate(teams, (_) => <_TeamPlayer>[]);
       showTeams = true;
     });
   }
@@ -248,7 +255,25 @@ class _NewGameViewState extends State<NewGameView> {
       status: GameStatus.active,
     );
 
-    Get.find<ManageClubsController>().createGame(game).then((_) {
+    final teamsPayload = List.generate(generatedTeams.length, (index) {
+      final team = generatedTeams[index];
+      final players = teamPlayers[index];
+      return {
+        'name': team.name ?? "Team ${index + 1}",
+        'players': players.map((p) => p.toMap()).toList(),
+      };
+    });
+
+    final clubGamePayload = {
+      'name': game.name,
+      'teamsCount': generatedTeams.length,
+      'playersPerTeam': playersPerTeam,
+      'teams': teamsPayload,
+    };
+
+    Get.find<ManageClubsController>()
+        .createGame(game, clubGame: clubGamePayload)
+        .then((_) {
       nav.changeTab(1);
     });
   }
@@ -264,5 +289,168 @@ class _NewGameViewState extends State<NewGameView> {
       length,
       (_) => chars[rand.nextInt(chars.length)],
     ).join();
+  }
+
+  void _removeTeam(int index) {
+    setState(() {
+      generatedTeams.removeAt(index);
+      teamPlayers.removeAt(index);
+      teams = generatedTeams.length;
+      showTeams = generatedTeams.isNotEmpty;
+    });
+  }
+
+  void _showAddPlayersSheet(int teamIndex) {
+    final team = generatedTeams[teamIndex];
+    final players = teamPlayers[teamIndex];
+    final remainingSlots = team.playersPerTeam - players.length;
+    if (remainingSlots <= 0) {
+      Get.snackbar("Team full", "This team already has all players");
+      return;
+    }
+
+    final controllers = List.generate(
+      remainingSlots,
+      (_) => TextEditingController(),
+    );
+
+    final sheetFuture = showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return CustomModal(
+          title: "Add Players",
+          onClose: () => Navigator.of(sheetContext).pop(),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: List.generate(remainingSlots, (index) {
+              final labelIndex = players.length + index + 1;
+              return Padding(
+                padding: EdgeInsets.only(bottom: 12.h),
+                child: CustomFormField(
+                  label: "Email (Player $labelIndex)",
+                  hint: "Enter Email Address",
+                  controller: controllers[index],
+                  borderRadius: BorderRadius.circular(12.r),
+                  borderSide: BorderSide(color: AppColors.borderColorLight),
+                ),
+              );
+            }),
+          ),
+          actions: [
+            CustomElevatedButton(
+              btnName: "Add to team",
+              onPressed: () async {
+                await _addPlayersToTeam(
+                  teamIndex,
+                  controllers,
+                  onClose: () {
+                    if (Navigator.of(sheetContext).canPop()) {
+                      Navigator.of(sheetContext).pop();
+                    }
+                  },
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    sheetFuture.whenComplete(() {
+      for (final controller in controllers) {
+        controller.dispose();
+      }
+    });
+  }
+
+  Future<void> _addPlayersToTeam(
+    int teamIndex,
+    List<TextEditingController> controllers,
+    {VoidCallback? onClose}
+  ) async {
+    final rawEmails = controllers
+        .map((c) => c.text.trim().toLowerCase())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (rawEmails.isEmpty) {
+      Get.snackbar("Missing email", "Please enter at least one email");
+      return;
+    }
+
+    final existingEmails = teamPlayers[teamIndex]
+        .map((p) => p.email.toLowerCase())
+        .toSet();
+    for (final email in rawEmails) {
+      if (existingEmails.contains(email)) {
+        Get.snackbar("Duplicate", "Player already added to this team");
+        return;
+      }
+    }
+
+    final playersToAdd = <_TeamPlayer>[];
+    for (final email in rawEmails) {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .limit(1)
+          .get();
+      if (!mounted) {
+        return;
+      }
+      if (snapshot.docs.isEmpty) {
+        Get.snackbar("Player did not sign up", "No user found for $email");
+        return;
+      }
+      final doc = snapshot.docs.first;
+      final data = doc.data();
+      final name = (data['displayName'] ?? data['name'] ?? '').toString();
+      playersToAdd.add(
+        _TeamPlayer(
+          uid: doc.id,
+          name: name.isEmpty ? email : name,
+          email: email,
+        ),
+      );
+    }
+
+    setState(() {
+      teamPlayers[teamIndex].addAll(playersToAdd);
+      final team = generatedTeams[teamIndex];
+      generatedTeams[teamIndex] = TeamModel(
+        name: team.name,
+        playersCount: team.playersCount ?? team.playersPerTeam,
+        birdies: team.birdies,
+        holesRemaining: team.holesRemaining,
+        progress: team.progress,
+        joinedPlayers: teamPlayers[teamIndex].length,
+        playersPerTeam: team.playersPerTeam,
+      );
+    });
+    if (onClose != null) {
+      onClose();
+    } else if (Get.isBottomSheetOpen ?? false) {
+      Get.back();
+    }
+  }
+}
+
+class _TeamPlayer {
+  final String uid;
+  final String name;
+  final String email;
+
+  _TeamPlayer({
+    required this.uid,
+    required this.name,
+    required this.email,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'uid': uid,
+      'name': name,
+      'email': email,
+    };
   }
 }

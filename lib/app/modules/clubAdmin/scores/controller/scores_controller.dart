@@ -7,6 +7,9 @@ class ScoresController extends GetxController {
   RxBool showGameDetail = false.obs;
   RxBool showPlayerRank = false.obs;
   final RxnString clubId = RxnString();
+  final RxnString selectedGameName = RxnString();
+  final RxnString selectedGameStatus = RxnString();
+  final RxnString selectedGameDate = RxnString();
 
   @override
   void onInit() {
@@ -25,15 +28,32 @@ class ScoresController extends GetxController {
   void changeTab(int index) {
     selectedTab.value = index;
   }
-  void openTeamRank() {
+  void openTeamRank({
+    required String name,
+    required String status,
+    required String date,
+  }) {
+    selectedGameName.value = name;
+    selectedGameStatus.value = status;
+    selectedGameDate.value = date;
     showGameDetail.value = true;
   }
-   void openPlayerRank() {
+  void openPlayerRank({
+    required String name,
+    required String status,
+    required String date,
+  }) {
+    selectedGameName.value = name;
+    selectedGameStatus.value = status;
+    selectedGameDate.value = date;
     showPlayerRank.value = true;
   }
 
   void backToGames() {
     showGameDetail.value = false;
     showPlayerRank.value = false;
+    selectedGameName.value = null;
+    selectedGameStatus.value = null;
+    selectedGameDate.value = null;
   }
 }

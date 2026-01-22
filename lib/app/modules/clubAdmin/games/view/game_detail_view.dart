@@ -58,7 +58,7 @@ class GameDetailView extends GetView<ManageClubsController> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        "Hole ${game.currentHole} of ${game.totalHoles} • Par ${game.par}",
+                        "Hole ${game.currentHole} of ${game.totalHoles} - Par ${game.par}",
                         style: TextStyle(color: Colors.white70, fontSize: 14),
                       ),
                       const SizedBox(height: 8),

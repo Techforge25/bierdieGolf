@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'dart:io';
 
 Widget customProfileContainer({
+  required BuildContext context,
   required String nameOfClub,
   String? clubId,
   String? clubLocation,
@@ -46,6 +47,9 @@ Widget customProfileContainer({
           ),
           GestureDetector(
             onTap: () {
+              if (Get.isRegistered<ClubEditController>()) {
+                Get.delete<ClubEditController>(force: true);
+              }
               ClubEditBinding(
                 clubId: clubId,
                 initialName: nameOfClub,
@@ -53,13 +57,13 @@ Widget customProfileContainer({
                 initialLogoPath: clubLogoPath,
                 initialLogoBase64: clubLogoBase64,
               ).dependencies();
-              Get.bottomSheet(
-                const ClubEditModal(),
-                ignoreSafeArea: true,
+              showModalBottomSheet<void>(
+                context: context,
                 isScrollControlled: true,
+                builder: (_) => const ClubEditModal(),
               ).whenComplete(() {
                 if (Get.isRegistered<ClubEditController>()) {
-                  Get.delete<ClubEditController>();
+                  Get.delete<ClubEditController>(force: true);
                 }
               });
             },

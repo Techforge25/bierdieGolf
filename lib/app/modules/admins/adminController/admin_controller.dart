@@ -276,26 +276,30 @@ class AdminController extends GetxController {
                     Get.snackbar("Error", "Missing admin id");
                     return;
                   }
-                  final userDoc =
-                      await _firestore.collection('users').doc(adminId).get();
-                  final userData = userDoc.data();
-                  final name = userData?['displayName']?.toString() ?? '';
-                  final email = userData?['email']?.toString() ?? '';
-                  await _firestore.collection('users').doc(adminId).delete();
                   if (clubId.isNotEmpty) {
-                    await _firestore.collection('clubs').doc(clubId).set({
-                      'admins': FieldValue.arrayRemove([
-                        {
-                          'uid': adminId,
-                          'name': name,
-                          'email': email.toLowerCase(),
+                    final clubDoc =
+                        await _firestore.collection('clubs').doc(clubId).get();
+                    final clubData = clubDoc.data();
+                    final admins = clubData?['admins'];
+                    Map<String, dynamic>? target;
+                    if (admins is List) {
+                      for (final entry in admins) {
+                        if (entry is Map<String, dynamic> &&
+                            entry['uid']?.toString() == adminId) {
+                          target = entry;
+                          break;
                         }
-                      ]),
-                      'updatedAt': FieldValue.serverTimestamp(),
-                    }, SetOptions(merge: true));
+                      }
+                    }
+                    if (target != null) {
+                      await _firestore.collection('clubs').doc(clubId).set({
+                        'admins': FieldValue.arrayRemove([target]),
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      }, SetOptions(merge: true));
+                    }
                   }
                   Get.back();
-                  Get.snackbar("Deleted", "Admin removed");
+                  Get.snackbar("Removed", "Admin removed from club");
                 },
                 btnName: "Delete Admin",
                 backColor: AppColors.darkRed,

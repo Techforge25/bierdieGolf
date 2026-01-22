@@ -5,11 +5,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 class TeamCard extends StatelessWidget {
   final TeamModel team;
   final int teamIndex;
+  final VoidCallback onDelete;
+  final VoidCallback onAdd;
 
   const TeamCard({
     super.key,
     required this.team,
     required this.teamIndex,
+    required this.onDelete,
+    required this.onAdd,
   });
 
   @override
@@ -45,7 +49,10 @@ class TeamCard extends StatelessWidget {
                 ),
               ),
 
-              Icon(Icons.delete_outline, color: Colors.red),
+              IconButton(
+                onPressed: onDelete,
+                icon: Icon(Icons.delete_outline, color: Colors.red),
+              ),
             ],
           ),
 
@@ -53,7 +60,7 @@ class TeamCard extends StatelessWidget {
 
           /// TEAM NAME
           Text(
-            team.name!,
+            team.name ?? "Team ${teamIndex + 1}",
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
 
@@ -64,12 +71,12 @@ class TeamCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "${team.joinedPlayers}/${team.playersCount} Joined",
+                "${team.joinedPlayers ?? 0}/${team.playersCount ?? team.playersPerTeam} Joined",
                 style: TextStyle(color: Colors.grey.shade700),
               ),
 
               OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: onAdd,
                 icon: Icon(Icons.person_add, size: 16),
                 label: Text("Add"),
               )

@@ -48,7 +48,7 @@ class ClubAdminBottomNav extends StatelessWidget {
                 index: 2,
                 ),
               _navItem(
-                icon: Icons.sports_score_outlined,
+                icon: Icons.leaderboard_outlined,
                 label: "Scores",
                 index: 3,
               ),
@@ -75,7 +75,12 @@ class ClubAdminBottomNav extends StatelessWidget {
 
       return GestureDetector(
         onDoubleTap: onDoubleTap,
-        onTap: () => controller.changeTab(index),
+        onTap: () {
+          if ((index == 1 || index == 2) && !controller.guardClubAccess()) {
+            return;
+          }
+          controller.changeTab(index);
+        },
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

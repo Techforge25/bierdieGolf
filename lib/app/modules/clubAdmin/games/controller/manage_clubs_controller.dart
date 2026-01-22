@@ -56,17 +56,30 @@ class ManageClubsController extends GetxController {
     });
   }
 
-  Future<void> createGame(GameModel game) async {
+  Future<void> createGame(
+    GameModel game, {
+    Map<String, dynamic>? clubGame,
+  }) async {
     final clubId = _clubId.value;
     if (clubId == null || clubId.isEmpty) {
       Get.snackbar("Error", "Missing club id");
       return;
     }
-    await _firestore.collection('games').add({
+    final gameRef = await _firestore.collection('games').add({
       ...game.toMap(),
       'clubId': clubId,
       'createdAt': FieldValue.serverTimestamp(),
     });
+    if (clubGame != null) {
+      final payload = {
+        ...clubGame,
+        'gameId': gameRef.id,
+      };
+      await _firestore.collection('clubs').doc(clubId).set({
+        'game': payload,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
   }
 
   void changeTab(int index) {

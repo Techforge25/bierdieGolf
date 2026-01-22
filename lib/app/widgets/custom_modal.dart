@@ -8,12 +8,15 @@ class CustomModal extends StatelessWidget {
   final Widget content;
   final List<Widget> actions;
   final TextStyle? titleStyle;
+  final VoidCallback? onClose;
 
   const CustomModal({
     super.key,
     required this.title,
     required this.content,
-    required this.actions, this.titleStyle,
+    required this.actions,
+    this.titleStyle,
+    this.onClose,
   });
 
   @override
@@ -43,7 +46,7 @@ class CustomModal extends StatelessWidget {
                     Text(title, style: titleStyle ??  AppTextStyles.bodyMedium),
                     IconButton(
                       icon: const Icon(Icons.close),
-                      onPressed: () => Get.back(),
+                      onPressed: onClose ?? () => Get.back(),
                     ),
                   ],
                 ),

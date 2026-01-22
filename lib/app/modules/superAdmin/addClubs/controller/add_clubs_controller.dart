@@ -357,6 +357,16 @@ class AddClubsController extends GetxController {
           'clubName': clubName,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
+        await _upsertRoleProfile(
+          uid: uid,
+          role: 'club_admin',
+          data: {
+            'email': email,
+            'displayName': name,
+            'clubId': clubId,
+            'clubName': clubName,
+          },
+        );
         
         await _firestore.collection('clubs').doc(clubId).set({
           'admins': FieldValue.arrayUnion([
@@ -401,7 +411,6 @@ class AddClubsController extends GetxController {
     final snapshot = await _firestore
         .collection('users')
         .where('email', isEqualTo: normalizedEmail)
-        .where('role', isEqualTo: 'club_admin')
         .limit(1)
         .get();
 
@@ -412,6 +421,11 @@ class AddClubsController extends GetxController {
 
     final doc = snapshot.docs.first;
     final data = doc.data();
+    final role = (data['role'] ?? '').toString().trim().toLowerCase();
+    if (role.isNotEmpty && role != 'club_admin') {
+      Get.snackbar("Error", "User is not a club admin");
+      return null;
+    }
     final currentClubId = (data['clubId'] ?? '').toString();
     if (currentClubId.isNotEmpty && currentClubId != clubId) {
       Get.snackbar("Error", "Admin already assigned to another club");
@@ -422,6 +436,7 @@ class AddClubsController extends GetxController {
     final name = (data['displayName'] ?? '').toString();
 
     await _firestore.collection('users').doc(uid).set({
+      'role': 'club_admin',
       'clubId': clubId,
       'clubName': clubName,
       'updatedAt': FieldValue.serverTimestamp(),

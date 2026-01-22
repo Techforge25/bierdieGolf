@@ -67,8 +67,8 @@ class ClubAdminBottomNavController extends GetxController {
   }
 
   void changeTab(int index) {
-    currentIndex.value = index;
-    if (index >= 0 && index < 5) {
+    if (index >= 0 && index < screens.length) {
+      currentIndex.value = index;
       bottomNavIndex.value = index;
     }
   }

@@ -59,6 +59,7 @@ class GolfClubProfilePage extends StatelessWidget {
             children: [
               clubId.isEmpty
                   ? customProfileContainer(
+                      context: context,
                       nameOfClub: nameOfClub,
                       clubId: clubId,
                       clubLocation: clubLocation,
@@ -74,6 +75,7 @@ class GolfClubProfilePage extends StatelessWidget {
                         final location =
                             (data?['location'] ?? clubLocation).toString();
                         return customProfileContainer(
+                          context: context,
                           nameOfClub: clubName,
                           clubId: clubId,
                           clubLocation: location,
