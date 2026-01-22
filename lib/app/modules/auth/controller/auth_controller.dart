@@ -91,7 +91,7 @@ class AuthController extends GetxController {
       final role = await _authRepository.fetchUserRole(user.uid);
       final route = _routeForRole(role);
       if (route == null) {
-        Get.snackbar("Login Failed", "No role assigned to this account");
+        Get.snackbar("Login Failed", "Contact Super Admin");
         return;
       }
 

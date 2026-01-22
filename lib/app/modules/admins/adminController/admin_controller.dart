@@ -276,30 +276,51 @@ class AdminController extends GetxController {
                     Get.snackbar("Error", "Missing admin id");
                     return;
                   }
-                  if (clubId.isNotEmpty) {
-                    final clubDoc =
-                        await _firestore.collection('clubs').doc(clubId).get();
-                    final clubData = clubDoc.data();
-                    final admins = clubData?['admins'];
-                    Map<String, dynamic>? target;
-                    if (admins is List) {
-                      for (final entry in admins) {
-                        if (entry is Map<String, dynamic> &&
-                            entry['uid']?.toString() == adminId) {
-                          target = entry;
-                          break;
+                  try {
+                    final clubsSnapshot =
+                        await _firestore.collection('clubs').get();
+                    for (final clubDoc in clubsSnapshot.docs) {
+                      final clubData = clubDoc.data();
+                      final admins = clubData['admins'];
+                      Map<String, dynamic>? target;
+                      if (admins is List) {
+                        for (final entry in admins) {
+                          if (entry is Map<String, dynamic> &&
+                              entry['uid']?.toString() == adminId) {
+                            target = entry;
+                            break;
+                          }
                         }
                       }
+                      if (target != null) {
+                        await clubDoc.reference.set({
+                          'admins': FieldValue.arrayRemove([target]),
+                          'updatedAt': FieldValue.serverTimestamp(),
+                        }, SetOptions(merge: true));
+                      }
                     }
-                    if (target != null) {
-                      await _firestore.collection('clubs').doc(clubId).set({
-                        'admins': FieldValue.arrayRemove([target]),
-                        'updatedAt': FieldValue.serverTimestamp(),
-                      }, SetOptions(merge: true));
+
+                    final normalizedRole =
+                        roleController.text.trim().toLowerCase().isEmpty
+                            ? 'club_admin'
+                            : roleController.text.trim().toLowerCase();
+                    final userRef =
+                        _firestore.collection('users').doc(adminId);
+                    final batch = _firestore.batch();
+                    batch.delete(userRef);
+                    batch.delete(userRef.collection(normalizedRole).doc('profile'));
+                    await batch.commit();
+
+                    final authUser = FirebaseAuth.instance.currentUser;
+                    if (authUser != null && authUser.uid == adminId) {
+                      await authUser.delete();
                     }
+
+                    Get.back();
+                    Get.snackbar("Deleted", "Admin removed from database");
+                  } catch (e) {
+                    Get.snackbar("Error", "Failed to delete admin");
                   }
-                  Get.back();
-                  Get.snackbar("Removed", "Admin removed from club");
                 },
                 btnName: "Delete Admin",
                 backColor: AppColors.darkRed,
