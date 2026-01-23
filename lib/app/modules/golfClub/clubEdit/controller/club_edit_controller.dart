@@ -105,9 +105,11 @@ class ClubEditController extends GetxController {
       Get.snackbar("Error", "Missing club id");
       return;
     }
-    final controller = Get.isRegistered<AddClubsController>()
-        ? Get.find<AddClubsController>()
-        : Get.put(AddClubsController());
+    if (!Get.isRegistered<AddClubsController>()) {
+      Get.snackbar("Error", "Missing Add Clubs controller");
+      return;
+    }
+    final controller = Get.find<AddClubsController>();
     if (isNewAdmin.value) {
       await controller.createClubAdmin(
         name: adminNameController.text.trim(),
@@ -136,9 +138,11 @@ class ClubEditController extends GetxController {
   Future<void> removeAdminFromClub(String uid) async {
     final id = clubId ?? '';
     if (id.isEmpty) return;
-    final controller = Get.isRegistered<AddClubsController>()
-        ? Get.find<AddClubsController>()
-        : Get.put(AddClubsController());
+    if (!Get.isRegistered<AddClubsController>()) {
+      Get.snackbar("Error", "Missing Add Clubs controller");
+      return;
+    }
+    final controller = Get.find<AddClubsController>();
     await controller.removeAdminFromClub(uid: uid, clubId: id);
   }
 }

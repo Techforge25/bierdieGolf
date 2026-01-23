@@ -1,5 +1,7 @@
 import 'package:bierdygame/app/modules/auth/data/auth_repository.dart';
 import 'package:bierdygame/app/routes/app_routes.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -85,6 +87,21 @@ class AuthController extends GetxController {
       final user = userCredential.user;
       if (user == null) {
         Get.snackbar("Login Failed", "User not found");
+        return;
+      }
+
+      final userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final data = userDoc.data() ?? {};
+      final isActive = data['isActive'] == null ? true : data['isActive'] == true;
+      final status = (data['status'] ?? '').toString().toLowerCase();
+      final isSuspended = !isActive || status == 'inactive' || status == 'suspended' || status == 'blocked';
+      if (isSuspended) {
+        await FirebaseAuth.instance.signOut();
+        Get.snackbar(
+          "Account Suspended",
+          "Your Account was Suspended contact Super Admin",
+        );
         return;
       }
 

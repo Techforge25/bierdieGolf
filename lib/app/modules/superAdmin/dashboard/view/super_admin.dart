@@ -5,6 +5,7 @@ import 'package:bierdygame/app/widgets/custom_double_bar.dart';
 import 'package:bierdygame/app/widgets/custom_profile_bar.dart';
 import 'package:bierdygame/app/modules/superAdmin/widgets/custom_gradient_grid.dart';
 import 'package:bierdygame/app/modules/superAdmin/profile/controller/super_admin_profile_controller.dart';
+import 'package:bierdygame/app/modules/superAdmin/super_admin_bottom_nav/controller/super_admin_bot_nav_controller.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -16,6 +17,7 @@ class SuperAdminDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final profileController = Get.find<SuperAdminProfileController>();
+    final navController = Get.find<SuperAdminBotNavController>();
     return SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -26,6 +28,9 @@ class SuperAdminDashboard extends StatelessWidget {
                 () => CustomProfileBar(
                   onTap: () {
                     Get.toNamed(Routes.NOTIFICATIONS);
+                  },
+                  onAvatarTap: () {
+                    navController.changeTab(4);
                   },
                   bgImg: 'assets/images/dashboard_img.png',
                   name: profileController.displayName.value.isNotEmpty

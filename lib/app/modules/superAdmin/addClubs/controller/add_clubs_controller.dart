@@ -113,14 +113,16 @@ class AddClubsController extends GetxController {
         password: password,
       );
       final uid = credential.user?.uid;
-      if (uid != null) {
-        await _firestore.collection('users').doc(uid).set({
-          'email': email,
-          'displayName': name,
-          'role': 'club_admin',
-          'clubName': clubName,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        if (uid != null) {
+          await _firestore.collection('users').doc(uid).set({
+            'email': email,
+            'displayName': name,
+            'role': 'club_admin',
+            'clubName': clubName,
+            'isActive': true,
+            'status': 'active',
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
        
         admins.add(AdminModel(uid: uid, name: name, email: email));
       }
@@ -147,15 +149,17 @@ class AddClubsController extends GetxController {
  
 
   Future<void> resendInvite(String email) async {
-    await _firestore.collection('role_invites').doc(email).set({
+    final normalizedEmail = email.trim().toLowerCase();
+    await _firestore.collection('role_invites').doc(normalizedEmail).set({
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
-    Get.snackbar("Invite sent", "Invite resent to $email");
+    Get.snackbar("Invite sent", "Invite resent to $normalizedEmail");
   }
 
   Future<void> deleteInvite(String email) async {
-    await _firestore.collection('role_invites').doc(email).delete();
-    Get.snackbar("Deleted", "Invite removed for $email");
+    final normalizedEmail = email.trim().toLowerCase();
+    await _firestore.collection('role_invites').doc(normalizedEmail).delete();
+    Get.snackbar("Deleted", "Invite removed for $normalizedEmail");
   }
 
   Future<void> createClub({
@@ -355,6 +359,8 @@ class AddClubsController extends GetxController {
           'role': 'club_admin',
           'clubId': clubId,
           'clubName': clubName,
+          'isActive': true,
+          'status': 'active',
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
         await _upsertRoleProfile(
@@ -365,6 +371,8 @@ class AddClubsController extends GetxController {
             'displayName': name,
             'clubId': clubId,
             'clubName': clubName,
+            'isActive': true,
+            'status': 'active',
           },
         );
         
@@ -439,6 +447,8 @@ class AddClubsController extends GetxController {
       'role': 'club_admin',
       'clubId': clubId,
       'clubName': clubName,
+      'isActive': true,
+      'status': 'active',
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
     await _upsertRoleProfile(
@@ -449,6 +459,8 @@ class AddClubsController extends GetxController {
         'displayName': name,
         'clubId': clubId,
         'clubName': clubName,
+        'isActive': true,
+        'status': 'active',
       },
     );
     await _firestore.collection('clubs').doc(clubId).set({

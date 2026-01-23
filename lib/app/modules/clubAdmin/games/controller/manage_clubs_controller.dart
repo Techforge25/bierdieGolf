@@ -56,11 +56,22 @@ class ManageClubsController extends GetxController {
     });
   }
 
+  Future<String?> _ensureClubId() async {
+    if (_clubId.value != null && _clubId.value!.isNotEmpty) {
+      return _clubId.value;
+    }
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+    final userDoc = await _firestore.collection('users').doc(user.uid).get();
+    _clubId.value = userDoc.data()?['clubId']?.toString();
+    return _clubId.value;
+  }
+
   Future<void> createGame(
     GameModel game, {
     Map<String, dynamic>? clubGame,
   }) async {
-    final clubId = _clubId.value;
+    final clubId = await _ensureClubId();
     if (clubId == null || clubId.isEmpty) {
       Get.snackbar("Error", "Missing club id");
       return;
@@ -70,16 +81,33 @@ class ManageClubsController extends GetxController {
       'clubId': clubId,
       'createdAt': FieldValue.serverTimestamp(),
     });
-    if (clubGame != null) {
-      final payload = {
-        ...clubGame,
-        'gameId': gameRef.id,
-      };
-      await _firestore.collection('clubs').doc(clubId).set({
-        'game': payload,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+    if (!games.any((g) => g.id == gameRef.id)) {
+      games.insert(
+        0,
+        GameModel(
+          id: gameRef.id,
+          clubId: clubId,
+          name: game.name,
+          date: game.date,
+          passkey: game.passkey,
+          status: game.status,
+        ),
+      );
     }
+    final payload = {
+      if (clubGame != null) ...clubGame,
+      'gameId': gameRef.id,
+      'name': game.name,
+      'date': game.date,
+      'passkey': game.passkey,
+      'status': game.status.name,
+      'createdAt': FieldValue.serverTimestamp(),
+    };
+    await _firestore.collection('clubs').doc(clubId).set({
+      'game': payload,
+      'games': FieldValue.arrayUnion([payload]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   void changeTab(int index) {
@@ -93,9 +121,46 @@ void changeGameTab(int index) {
     games.insert(0, game); // latest on top
   }
 
-  void removeGame(GameModel game) {
+  Future<void> removeGame(GameModel game) async {
     if (game.id.isNotEmpty) {
-      _firestore.collection('games').doc(game.id).delete();
+      try {
+        await _firestore.collection('games').doc(game.id).delete();
+        games.removeWhere((g) => g.id == game.id);
+        Get.snackbar("Removed", "Game removed successfully");
+      } catch (e) {
+        Get.snackbar("Error", "Failed to remove game");
+        return;
+      }
+      final clubId = _clubId.value;
+      if (clubId != null && clubId.isNotEmpty) {
+        final clubRef = _firestore.collection('clubs').doc(clubId);
+        final clubSnap = await clubRef.get();
+        final clubData = clubSnap.data() ?? {};
+
+        final gameField = clubData['game'];
+        if (gameField is Map && gameField['gameId']?.toString() == game.id) {
+          await clubRef.set({
+            'game': FieldValue.delete(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+        }
+
+        final gamesField = clubData['games'];
+        if (gamesField is List) {
+          final updated = gamesField.where((entry) {
+            if (entry is Map) {
+              return entry['gameId']?.toString() != game.id;
+            }
+            return true;
+          }).toList();
+          if (updated.length != gamesField.length) {
+            await clubRef.set({
+              'games': updated,
+              'updatedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+          }
+        }
+      }
     } else {
       games.remove(game);
     }

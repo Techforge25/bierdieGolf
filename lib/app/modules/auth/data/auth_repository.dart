@@ -65,10 +65,15 @@ class FirebaseAuthRepository implements AuthRepository {
     required String displayName,
     required String role,
   }) {
-return _firestore.collection('users').doc(uid).set({    
+    final normalizedRole = role.trim().toLowerCase();
+    final isAdminRole =
+        normalizedRole == 'club_admin' || normalizedRole == 'super_admin';
+ return _firestore.collection('users').doc(uid).set({    
       'email': email,
       'displayName': displayName,
       'role': role,
+      if (isAdminRole) 'isActive': true,
+      if (isAdminRole) 'status': 'active',
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }

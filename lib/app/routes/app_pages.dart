@@ -8,6 +8,7 @@ import 'package:bierdygame/app/modules/clubAdmin/clubAdminBottomNav/bindings/clu
 import 'package:bierdygame/app/modules/clubAdmin/dashboard/view/dashboard_view.dart';
 import 'package:bierdygame/app/modules/clubAdmin/games/bindings/manage_games_binding.dart';
 import 'package:bierdygame/app/modules/clubAdmin/games/view/manage_games.dart';
+import 'package:bierdygame/app/modules/clubAdmin/newGame/bindings/new_game_binding.dart';
 import 'package:bierdygame/app/modules/clubAdmin/newGame/view/new_game_view.dart';
 import 'package:bierdygame/app/modules/clubAdmin/scores/bindings/scores_binding.dart';
 import 'package:bierdygame/app/modules/clubAdmin/scores/view/scores_view.dart';
@@ -85,7 +86,7 @@ class AppPages {
     GetPage(
       name: Routes.CREATE_GAME,
       page: () => NewGameView(),
-      binding: ManageGamesBinding(),
+      binding: NewGameBinding(),
     ),
     GetPage(
       name: Routes.SCORES,

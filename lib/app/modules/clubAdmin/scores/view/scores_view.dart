@@ -1,4 +1,4 @@
-import 'package:bierdygame/app/modules/clubAdmin/clubAdminProfile/view/club_profile_view.dart';
+import 'package:bierdygame/app/modules/clubAdmin/clubProfile/view/club_profile_view.dart';
 import 'package:bierdygame/app/modules/clubAdmin/scores/controller/scores_controller.dart';
 import 'package:bierdygame/app/modules/player/playerStats/view/player_stats_view.dart';
 import 'package:bierdygame/app/modules/superAdmin/notifications/widgets/notification_tab_bar.dart';

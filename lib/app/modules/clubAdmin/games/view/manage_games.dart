@@ -182,10 +182,10 @@ class ManageClubsGames extends GetView<ManageClubsController> {
               ),
               SizedBox(width: 10.w),
               GestureDetector(
-                onTap: () {
+                onTap: () async {
                   final nav = Get.find<ClubAdminBottomNavController>();
                   if (!nav.guardClubAccess()) return;
-                  controller.removeGame(game);
+                  await controller.removeGame(game);
                 },
                 child: Row(
                   children: [

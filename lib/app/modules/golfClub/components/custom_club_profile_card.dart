@@ -15,6 +15,8 @@ Widget customProfileContainer({
   String? clubLocation,
   String? clubLogoPath,
   String? clubLogoBase64,
+  bool showEdit = true,
+  VoidCallback? onEditTap,
 }) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -45,30 +47,32 @@ Widget customProfileContainer({
               ],
             ),
           ),
-          GestureDetector(
-            onTap: () {
-              if (Get.isRegistered<ClubEditController>()) {
-                Get.delete<ClubEditController>(force: true);
-              }
-              ClubEditBinding(
-                clubId: clubId,
-                initialName: nameOfClub,
-                initialLocation: clubLocation,
-                initialLogoPath: clubLogoPath,
-                initialLogoBase64: clubLogoBase64,
-              ).dependencies();
-              showModalBottomSheet<void>(
-                context: context,
-                isScrollControlled: true,
-                builder: (_) => const ClubEditModal(),
-              ).whenComplete(() {
-                if (Get.isRegistered<ClubEditController>()) {
-                  Get.delete<ClubEditController>(force: true);
-                }
-              });
-            },
-            child: Icon(Icons.edit_outlined, color: AppColors.primary),
-          ),
+          if (showEdit)
+            GestureDetector(
+              onTap: onEditTap ??
+                  () {
+                    if (Get.isRegistered<ClubEditController>()) {
+                      Get.delete<ClubEditController>(force: true);
+                    }
+                    ClubEditBinding(
+                      clubId: clubId,
+                      initialName: nameOfClub,
+                      initialLocation: clubLocation,
+                      initialLogoPath: clubLogoPath,
+                      initialLogoBase64: clubLogoBase64,
+                    ).dependencies();
+                    showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (_) => const ClubEditModal(),
+                    ).whenComplete(() {
+                      if (Get.isRegistered<ClubEditController>()) {
+                        Get.delete<ClubEditController>(force: true);
+                      }
+                    });
+                  },
+              child: Icon(Icons.edit_outlined, color: AppColors.primary),
+            ),
         ],
       ),
     );

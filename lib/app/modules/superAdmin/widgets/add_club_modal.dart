@@ -158,7 +158,7 @@ class AddClubModal extends GetView<AddClubsController> {
             return ListTile(
               leading: const CircleAvatar(),
               title: Text(name, style: AppTextStyles.bodyMedium),
-              subtitle: Text("$email Aú $role"),
+              subtitle: Text("$email - $role"),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -344,3 +344,4 @@ class AddClubModal extends GetView<AddClubsController> {
     );
   }
 }
+

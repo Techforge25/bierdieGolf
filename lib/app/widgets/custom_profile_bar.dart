@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CustomProfileBar extends StatelessWidget {
   final VoidCallback onTap;
+  final VoidCallback? onAvatarTap;
   final String bgImg;
   final String name;
   final String? imageUrl;
@@ -11,6 +12,7 @@ class CustomProfileBar extends StatelessWidget {
   const CustomProfileBar({
     super.key,
     required this.onTap,
+    this.onAvatarTap,
     required this.bgImg,
     required this.name,
     this.imageUrl,
@@ -21,13 +23,16 @@ class CustomProfileBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
               children: [
-                 CircleAvatar(
-                  radius: 25.r,
-                  backgroundImage: imageProvider ??
-                      ((imageUrl != null && imageUrl!.isNotEmpty)
-                          ? NetworkImage(imageUrl!)
-                          : AssetImage(bgImg) as ImageProvider),
-                ),
+                 GestureDetector(
+                   onTap: onAvatarTap,
+                   child: CircleAvatar(
+                    radius: 25.r,
+                    backgroundImage: imageProvider ??
+                        ((imageUrl != null && imageUrl!.isNotEmpty)
+                            ? NetworkImage(imageUrl!)
+                            : AssetImage(bgImg) as ImageProvider),
+                                   ),
+                 ),
                 const SizedBox(width: 12),
                  Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

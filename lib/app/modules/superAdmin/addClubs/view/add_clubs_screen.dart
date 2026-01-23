@@ -16,12 +16,6 @@ import 'package:get/get.dart';
 class AddClubsScreen extends GetView<AddClubsController> {
   const AddClubsScreen({super.key});
 
-  @override
-  AddClubsController get controller =>
-      Get.isRegistered<AddClubsController>()
-          ? Get.find<AddClubsController>()
-          : Get.put(AddClubsController());
-
   /// ---------------- ADMIN LIST ----------------
   Widget _adminList() {
     return Obx(

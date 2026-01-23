@@ -417,7 +417,7 @@ class AdminController extends GetxController {
                     'updatedAt': FieldValue.serverTimestamp(),
                   }, SetOptions(merge: true));
                   Get.back();
-                  Get.snackbar("Suspended", "Admin account suspended");
+                  Get.snackbar("Suspended", "account suspended");
                 },
                 btnName: "Suspend Admin",
                 backColor: AppColors.secondary,

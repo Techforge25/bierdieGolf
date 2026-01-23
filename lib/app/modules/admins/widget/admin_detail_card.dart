@@ -12,8 +12,7 @@ Widget buildAdminDetailCard({
   String? photoBase64,
   VoidCallback? onAvatarTap,
 }) {
-  ImageProvider avatarProvider =
-      const AssetImage("assets/images/dashboard_img.png");
+  ImageProvider avatarProvider = AssetImage("assets/images/dashboard_img.png",);
   if (photoBase64 != null && photoBase64.isNotEmpty) {
     avatarProvider = MemoryImage(base64Decode(photoBase64));
   }
@@ -31,18 +30,34 @@ Widget buildAdminDetailCard({
           child: Stack(
             alignment: Alignment.bottomRight,
             children: [
-              CircleAvatar(
-                radius: 50,
-                backgroundImage: avatarProvider,
+              Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.primary, width: 2),
+                ),
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.transparent,
+                  backgroundImage: avatarProvider,
+                ),
               ),
               if (onAvatarTap != null)
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: AppColors.primary,
-                  child: Icon(
-                    Icons.edit,
-                    size: 14,
-                    color: Colors.white,
+                Positioned(
+                  right: 2,
+                  bottom: 2,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.edit,
+                      size: 12,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
             ],
