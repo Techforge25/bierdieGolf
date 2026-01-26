@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 class ManageClubsController extends GetxController {
   RxInt selectedTab = 0.obs;
   RxInt selectedGameTab = 0.obs;
+  RxInt selectedLeaderboardTab = 0.obs;
   Rx<String?> selectedClub = Rx<String?>(null);
   final searchQuery = ''.obs;
   final searchController = TextEditingController();
@@ -123,6 +124,9 @@ class ManageClubsController extends GetxController {
   }
 void changeGameTab(int index) {
     selectedGameTab.value = index;
+  }
+  void changeLeaderboardTab(int index) {
+    selectedLeaderboardTab.value = index;
   }
   void addGame(GameModel game) {
     games.insert(0, game); // latest on top
