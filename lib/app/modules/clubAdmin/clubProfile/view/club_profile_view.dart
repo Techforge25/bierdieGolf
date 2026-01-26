@@ -10,8 +10,13 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class TeamProfileView extends StatelessWidget {
   final VoidCallback onBack;
+  final Map<String, dynamic>? teamData;
 
-  const TeamProfileView({super.key, required this.onBack});
+  const TeamProfileView({
+    super.key,
+    required this.onBack,
+    this.teamData,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,61 +41,95 @@ class TeamProfileView extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: ListView(
           children: [
-            StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(FirebaseAuth.instance.currentUser?.uid ?? 'missing')
-                  .snapshots(),
-              builder: (context, userSnapshot) {
-                final userData = userSnapshot.data?.data() ?? {};
-                final clubName = (userData['clubName'] ?? 'Club').toString();
-                final clubId = (userData['clubId'] ?? '').toString();
-                return Center(
-                  child: Column(
-                    children: [
-                      CircleAvatar(radius: 50),
-                      Text(
-                        "Team Stats",
-                        style: AppTextStyles.bodyLarge.copyWith(fontSize: 18),
-                      ),
-                      Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Color(0xffCFE8DC),
-                          borderRadius: BorderRadius.circular(20.r),
+            if (teamData == null)
+              StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(FirebaseAuth.instance.currentUser?.uid ?? 'missing')
+                    .snapshots(),
+                builder: (context, userSnapshot) {
+                  final userData = userSnapshot.data?.data() ?? {};
+                  final clubName = (userData['clubName'] ?? 'Club').toString();
+                  final clubId = (userData['clubId'] ?? '').toString();
+                  return Center(
+                    child: Column(
+                      children: [
+                        CircleAvatar(radius: 50),
+                        Text(
+                          "Team Stats",
+                          style: AppTextStyles.bodyLarge.copyWith(fontSize: 18),
                         ),
-                        child: Text(
-                          clubName,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.primary,
+                        Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Color(0xffCFE8DC),
+                            borderRadius: BorderRadius.circular(20.r),
+                          ),
+                          child: Text(
+                            clubName,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.primary,
+                            ),
                           ),
                         ),
+                        SizedBox(height: 10.h),
+                        StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                          stream: clubId.isEmpty
+                              ? Stream.empty()
+                              : FirebaseFirestore.instance
+                                  .collection('games')
+                                  .where('clubId', isEqualTo: clubId)
+                                  .snapshots(),
+                          builder: (context, gamesSnapshot) {
+                            final gamesCount =
+                                gamesSnapshot.data?.docs.length ?? 0;
+                            return Text(
+                              "Total Games: $gamesCount",
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.textBlack,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            if (teamData != null)
+              Center(
+                child: Column(
+                  children: [
+                    CircleAvatar(radius: 50),
+                    Text(
+                      (teamData?['name'] ?? 'Team').toString(),
+                      style: AppTextStyles.bodyLarge.copyWith(fontSize: 18),
+                    ),
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Color(0xffCFE8DC),
+                        borderRadius: BorderRadius.circular(20.r),
                       ),
-                      SizedBox(height: 10.h),
-                      StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                        stream: clubId.isEmpty
-                            ? Stream.empty()
-                            : FirebaseFirestore.instance
-                                .collection('games')
-                                .where('clubId', isEqualTo: clubId)
-                                .snapshots(),
-                        builder: (context, gamesSnapshot) {
-                          final gamesCount =
-                              gamesSnapshot.data?.docs.length ?? 0;
-                          return Text(
-                            "Total Games: $gamesCount",
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textBlack,
-                            ),
-                          );
-                        },
+                      child: Text(
+                        (teamData?['gameName'] ?? 'Club').toString(),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.primary,
+                        ),
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                    ),
+                    SizedBox(height: 10.h),
+                    Text(
+                      "Total Games: ${(teamData?['totalGames'] ?? 0).toString()}",
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textBlack,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             SizedBox(height: 10.h),
             Align(
               alignment: Alignment.centerLeft,
@@ -141,10 +180,10 @@ class TeamProfileView extends StatelessWidget {
             ),
             SizedBox(height: 10.h),
             ClubsDetailGrid(
-              value1: 0.toString(),
-              value2: 0.toString(),
-              value3: 0.toString(),
-              value4: "N/A",
+              value1: (teamData?['totalGames'] ?? 0).toString(),
+              value2: (teamData?['avgBirdies'] ?? 0).toString(),
+              value3: (teamData?['totalWins'] ?? 0).toString(),
+              value4: (teamData?['topScores'] ?? "N/A").toString(),
               color: AppColors.darkGreen,
               icon1: Icons.sports_golf_outlined,
               icon2: Icons.trending_up_outlined,
@@ -235,6 +274,81 @@ class TeamProfileView extends StatelessWidget {
                 fontSize: 18,
               ),
             ),
+            SizedBox(height: 10.h),
+            if (teamData != null)
+              ...(teamData?['members'] is List
+                  ? (teamData?['members'] as List)
+                      .whereType<Map<String, dynamic>>()
+                      .map((member) {
+                      final name = (member['name'] ?? 'Player').toString();
+                      final role = (member['role'] ?? 'Member').toString();
+                      final birdies =
+                          (member['birdies'] ?? 0).toString();
+                      return Container(
+                        margin: EdgeInsets.only(bottom: 10.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 10.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(12.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 8,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22.r,
+                              backgroundColor: AppColors.flashyGreen,
+                              child: Icon(
+                                Icons.person,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name,
+                                    style: AppTextStyles.bodyMedium2,
+                                  ),
+                                  Text(
+                                    role,
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: AppColors.borderColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  birdies,
+                                  style: AppTextStyles.bodyMedium2,
+                                ),
+                                Text(
+                                  "Birdies",
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.borderColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList()
+                  : []),
 
           ],
         ),

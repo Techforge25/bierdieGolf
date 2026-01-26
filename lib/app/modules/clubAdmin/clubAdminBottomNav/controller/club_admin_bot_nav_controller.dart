@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bierdygame/app/modules/clubAdmin/dashboard/view/dashboard_view.dart';
 import 'package:bierdygame/app/modules/clubAdmin/games/view/manage_games.dart';
 import 'package:bierdygame/app/modules/clubAdmin/newGame/view/new_game_view.dart';
+import 'package:bierdygame/app/modules/clubAdmin/newGame/controller/new_game_controller.dart';
 import 'package:bierdygame/app/modules/clubAdmin/scores/view/scores_view.dart';
 import 'package:bierdygame/app/modules/golfClub/golfClubProfile/golf_club_profile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -68,6 +69,12 @@ class ClubAdminBottomNavController extends GetxController {
 
   void changeTab(int index) {
     if (index >= 0 && index < screens.length) {
+      if (currentIndex.value == 2 && index != 2) {
+        final newGame = Get.isRegistered<NewGameController>()
+            ? Get.find<NewGameController>()
+            : null;
+        newGame?.saveDraftIfNeeded();
+      }
       currentIndex.value = index;
       bottomNavIndex.value = index;
     }

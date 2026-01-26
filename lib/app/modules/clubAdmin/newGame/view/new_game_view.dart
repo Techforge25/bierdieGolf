@@ -110,6 +110,7 @@ class NewGameView extends GetView<NewGameController> {
                         return TeamCard(
                           team: controller.generatedTeams[index],
                           teamIndex: index,
+                          nameController: controller.teamNameControllers[index],
                           onDelete: () => controller.removeTeam(index),
                           onAdd: () => _showAddPlayersSheet(context, controller, index),
                         );

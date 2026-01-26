@@ -76,11 +76,15 @@ class ManageClubsController extends GetxController {
       Get.snackbar("Error", "Missing club id");
       return;
     }
-    final gameRef = await _firestore.collection('games').add({
+    final gamePayload = {
       ...game.toMap(),
       'clubId': clubId,
       'createdAt': FieldValue.serverTimestamp(),
-    });
+    };
+    if (clubGame != null && clubGame['teams'] != null) {
+      gamePayload['teams'] = clubGame['teams'];
+    }
+    final gameRef = await _firestore.collection('games').add(gamePayload);
     if (!games.any((g) => g.id == gameRef.id)) {
       games.insert(
         0,
@@ -101,11 +105,14 @@ class ManageClubsController extends GetxController {
       'date': game.date,
       'passkey': game.passkey,
       'status': game.status.name,
-      'createdAt': FieldValue.serverTimestamp(),
     };
+    final payloadForArray = Map<String, dynamic>.from(payload);
     await _firestore.collection('clubs').doc(clubId).set({
-      'game': payload,
-      'games': FieldValue.arrayUnion([payload]),
+      'game': {
+        ...payload,
+        'createdAt': FieldValue.serverTimestamp(),
+      },
+      'games': FieldValue.arrayUnion([payloadForArray]),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }

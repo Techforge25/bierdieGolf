@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 class TeamCard extends StatelessWidget {
   final TeamModel team;
   final int teamIndex;
+  final TextEditingController nameController;
   final VoidCallback onDelete;
   final VoidCallback onAdd;
 
@@ -12,6 +13,7 @@ class TeamCard extends StatelessWidget {
     super.key,
     required this.team,
     required this.teamIndex,
+    required this.nameController,
     required this.onDelete,
     required this.onAdd,
   });
@@ -59,8 +61,12 @@ class TeamCard extends StatelessWidget {
           SizedBox(height: 8.h),
 
           /// TEAM NAME
-          Text(
-            team.name ?? "Team ${teamIndex + 1}",
+          TextField(
+            controller: nameController,
+            decoration: InputDecoration(
+              hintText: "Team ${teamIndex + 1}",
+              border: InputBorder.none,
+            ),
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
 

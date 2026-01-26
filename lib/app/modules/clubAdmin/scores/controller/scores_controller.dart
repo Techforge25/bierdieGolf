@@ -10,6 +10,8 @@ class ScoresController extends GetxController {
   final RxnString selectedGameName = RxnString();
   final RxnString selectedGameStatus = RxnString();
   final RxnString selectedGameDate = RxnString();
+  final Rxn<Map<String, dynamic>> selectedTeam = Rxn<Map<String, dynamic>>();
+  final Rxn<Map<String, dynamic>> selectedPlayer = Rxn<Map<String, dynamic>>();
 
   @override
   void onInit() {
@@ -32,20 +34,24 @@ class ScoresController extends GetxController {
     required String name,
     required String status,
     required String date,
+    Map<String, dynamic>? teamData,
   }) {
     selectedGameName.value = name;
     selectedGameStatus.value = status;
     selectedGameDate.value = date;
+    selectedTeam.value = teamData;
     showGameDetail.value = true;
   }
   void openPlayerRank({
     required String name,
     required String status,
     required String date,
+    Map<String, dynamic>? playerData,
   }) {
     selectedGameName.value = name;
     selectedGameStatus.value = status;
     selectedGameDate.value = date;
+    selectedPlayer.value = playerData;
     showPlayerRank.value = true;
   }
 
@@ -55,5 +61,7 @@ class ScoresController extends GetxController {
     selectedGameName.value = null;
     selectedGameStatus.value = null;
     selectedGameDate.value = null;
+    selectedTeam.value = null;
+    selectedPlayer.value = null;
   }
 }

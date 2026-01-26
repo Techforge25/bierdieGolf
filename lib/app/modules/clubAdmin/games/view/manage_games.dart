@@ -2,6 +2,7 @@ import 'package:bierdygame/app/modules/clubAdmin/clubAdminBottomNav/controller/c
 import 'package:bierdygame/app/modules/clubAdmin/games/controller/manage_clubs_controller.dart';
 import 'package:bierdygame/app/modules/clubAdmin/games/view/game_detail_view.dart';
 import 'package:bierdygame/app/modules/clubAdmin/games/widgets/custom_tabbar.dart';
+import 'package:bierdygame/app/modules/clubAdmin/newGame/controller/new_game_controller.dart';
 import 'package:bierdygame/app/modules/clubAdmin/newGame/model/game_model.dart';
 import 'package:bierdygame/app/theme/app_colors.dart';
 import 'package:bierdygame/app/theme/app_text_styles.dart';
@@ -51,6 +52,7 @@ class ManageClubsGames extends GetView<ManageClubsController> {
               onPressed: () {
                 final nav = Get.find<ClubAdminBottomNavController>();
                 if (!nav.guardClubAccess()) return;
+                _ensureNewGameController().resetForm();
                 nav.changeTab(2);
               },
             ),
@@ -153,58 +155,175 @@ class ManageClubsGames extends GetView<ManageClubsController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              GestureDetector(
-                onTap: () {
-                  final nav = Get.find<ClubAdminBottomNavController>();
-                  if (!nav.guardClubAccess()) return;
-                  controller.openGame(game);
-                },
-                child: Row(
-                  children: [
-                    Icon(Icons.visibility,
-                        color: AppColors.borderColor, size: 18),
-                    SizedBox(width: 4.w),
-                    Text(
-                      "View",
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontSize: 14,
-                        color: AppColors.borderColor,
+              Expanded(
+                child: InkWell(
+                  onTap: () {
+                    final nav = Get.find<ClubAdminBottomNavController>();
+                    if (!nav.guardClubAccess()) return;
+                    controller.openGame(game);
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.visibility,
+                          color: AppColors.borderColor, size: 18),
+                      SizedBox(width: 4.w),
+                      Text(
+                        "View",
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontSize: 14,
+                          color: AppColors.borderColor,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-              SizedBox(width: 10.w),
               Container(
                 height: 15.h,
                 width: 2.w,
                 color: AppColors.borderColor,
               ),
-              SizedBox(width: 10.w),
-              GestureDetector(
-                onTap: () async {
-                  final nav = Get.find<ClubAdminBottomNavController>();
-                  if (!nav.guardClubAccess()) return;
-                  await controller.removeGame(game);
-                },
-                child: Row(
-                  children: [
-                    Icon(Icons.delete_outline_outlined,
-                        color: AppColors.darkRed, size: 18),
-                    SizedBox(width: 4.w),
-                    Text(
-                      "Remove",
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.darkRed,
-                        fontSize: 14,
-                      ),
+              if (game.status == GameStatus.draft) ...[
+                Expanded(
+                  child: InkWell(
+                    onTap: () async {
+                      final nav = Get.find<ClubAdminBottomNavController>();
+                    if (!nav.guardClubAccess()) return;
+                    await _ensureNewGameController().loadDraftById(game.id);
+                    nav.changeTab(2);
+                  },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.edit_outlined,
+                            color: AppColors.borderColor, size: 18),
+                        SizedBox(width: 4.w),
+                        Text(
+                          "Edit",
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            fontSize: 14,
+                            color: AppColors.borderColor,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                ),
+                Container(
+                  height: 15.h,
+                  width: 2.w,
+                  color: AppColors.borderColor,
+                ),
+              ],
+              Expanded(
+                child: InkWell(
+                  onTap: () {
+                    final nav = Get.find<ClubAdminBottomNavController>();
+                    if (!nav.guardClubAccess()) return;
+                    _showRemoveDialog(game);
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.delete_outline_outlined,
+                          color: AppColors.darkRed, size: 18),
+                      SizedBox(width: 4.w),
+                      Text(
+                        "Remove",
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.darkRed,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  NewGameController _ensureNewGameController() {
+    if (Get.isRegistered<NewGameController>()) {
+      return Get.find<NewGameController>();
+    }
+    return Get.put(NewGameController());
+  }
+
+  void _showRemoveDialog(GameModel game) {
+    Get.dialog(
+      Dialog(
+        insetPadding: EdgeInsets.symmetric(horizontal: 16),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(12.h),
+          decoration: BoxDecoration(
+            color: AppColors.flashyRed,
+            border: Border.all(color: AppColors.darkRed),
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: AppColors.flashyRed,
+                      radius: 40.r,
+                      child: Icon(
+                        Icons.delete_outline,
+                        color: AppColors.darkRed,
+                        size: 40,
+                      ),
+                    ),
+                    Text(
+                      "Remove Game?",
+                      style: AppTextStyles.bodyMedium2.copyWith(
+                        color: AppColors.textBlack,
+                        fontSize: 22.sp,
+                      ),
+                    ),
+                    SizedBox(height: 6.h),
+                    Text(
+                      game.name,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textBlack,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20.h),
+              CustomElevatedButton(
+                onPressed: () async {
+                  Get.back();
+                  await controller.removeGame(game);
+                },
+                btnName: "Remove",
+                backColor: AppColors.darkRed,
+                textColor: AppColors.white,
+                borderRadius: 15.r,
+              ),
+              SizedBox(height: 10.h),
+              CustomElevatedButton(
+                onPressed: () {
+                  Get.back();
+                },
+                btnName: "Cancel",
+                backColor: AppColors.flashyRed,
+                textColor: AppColors.darkRed,
+                borderColor: AppColors.darkRed,
+                borderRadius: 15.r,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

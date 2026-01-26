@@ -6,12 +6,14 @@ import 'package:bierdygame/app/modules/clubAdmin/games/controller/manage_clubs_c
 import 'package:bierdygame/app/modules/clubAdmin/newGame/model/game_model.dart';
 import 'package:bierdygame/app/theme/app_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 class NewGameController extends GetxController {
   final TextEditingController nameController = TextEditingController();
+  final List<TextEditingController> teamNameControllers = [];
 
   int teams = 4;
   int playersPerTeam = 2;
@@ -19,10 +21,15 @@ class NewGameController extends GetxController {
   bool showTeams = false;
   List<TeamModel> generatedTeams = [];
   List<List<TeamPlayer>> teamPlayers = [];
+  String? _draftGameId;
+  bool _isSubmitting = false;
 
   @override
   void onClose() {
     nameController.dispose();
+    for (final controller in teamNameControllers) {
+      controller.dispose();
+    }
     super.onClose();
   }
 
@@ -76,6 +83,17 @@ class NewGameController extends GetxController {
         joinedPlayers: 0,
       ),
     );
+    for (final controller in teamNameControllers) {
+      controller.dispose();
+    }
+    teamNameControllers
+      ..clear()
+      ..addAll(
+        List.generate(
+          teams,
+          (index) => TextEditingController(text: "Team ${index + 1}"),
+        ),
+      );
     teamPlayers = List.generate(teams, (_) => <TeamPlayer>[]);
     showTeams = true;
     update();
@@ -175,37 +193,59 @@ class NewGameController extends GetxController {
     );
   }
 
-  void createGame() {
+  Future<void> createGame() async {
     final nav = Get.find<ClubAdminBottomNavController>();
     if (!nav.guardClubAccess()) return;
-    final game = GameModel(
-      name: nameController.text,
-      date: DateFormat('yyyy-MM-dd').format(DateTime.now()),
-      passkey: generatePasskey(),
-      status: GameStatus.active,
-    );
+    _isSubmitting = true;
+    try {
+      final game = GameModel(
+        name: nameController.text,
+        date: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+        passkey: generatePasskey(),
+        status: GameStatus.active,
+      );
 
-    final teamsPayload = List.generate(generatedTeams.length, (index) {
-      final team = generatedTeams[index];
-      final players = teamPlayers[index];
-      return {
-        'name': team.name ?? "Team ${index + 1}",
-        'players': players.map((p) => p.toMap()).toList(),
+      final teamsPayload = List.generate(generatedTeams.length, (index) {
+        final team = generatedTeams[index];
+        final players = teamPlayers[index];
+        final teamName = teamNameControllers.length > index
+            ? teamNameControllers[index].text.trim()
+            : (team.name ?? "Team ${index + 1}");
+        return {
+          'name': teamName.isEmpty ? "Team ${index + 1}" : teamName,
+          'totalGames': 1,
+          'avgBirdies': 0,
+          'totalWins': 0,
+          'topScores': 0,
+          'teamBirdies': 0,
+          'createdAt': DateTime.now().toIso8601String(),
+          'members': players.map((p) => p.toMap()).toList(),
+        };
+      });
+
+      final clubGamePayload = {
+        'name': game.name,
+        'teamsCount': generatedTeams.length,
+        'playersPerTeam': playersPerTeam,
+        'teams': teamsPayload,
       };
-    });
 
-    final clubGamePayload = {
-      'name': game.name,
-      'teamsCount': generatedTeams.length,
-      'playersPerTeam': playersPerTeam,
-      'teams': teamsPayload,
-    };
-
-    Get.find<ManageClubsController>()
-        .createGame(game, clubGame: clubGamePayload)
-        .then((_) {
+      await Get.find<ManageClubsController>()
+          .createGame(game, clubGame: clubGamePayload);
+      if (_draftGameId != null) {
+        await FirebaseFirestore.instance
+            .collection('games')
+            .doc(_draftGameId)
+            .delete();
+      }
+      resetForm();
+      _draftGameId = null;
       nav.changeTab(1);
-    });
+    } catch (_) {
+      Get.snackbar("Error", "Failed to create game");
+    } finally {
+      _isSubmitting = false;
+    }
   }
 
   String generatePasskey({int length = 6}) {
@@ -221,6 +261,10 @@ class NewGameController extends GetxController {
   void removeTeam(int index) {
     generatedTeams.removeAt(index);
     teamPlayers.removeAt(index);
+    if (index < teamNameControllers.length) {
+      teamNameControllers[index].dispose();
+      teamNameControllers.removeAt(index);
+    }
     teams = generatedTeams.length;
     showTeams = generatedTeams.isNotEmpty;
     update();
@@ -274,8 +318,11 @@ class NewGameController extends GetxController {
 
     teamPlayers[teamIndex].addAll(playersToAdd);
     final team = generatedTeams[teamIndex];
+    final teamName = teamNameControllers.length > teamIndex
+        ? teamNameControllers[teamIndex].text.trim()
+        : team.name;
     generatedTeams[teamIndex] = TeamModel(
-      name: team.name,
+      name: teamName,
       playersCount: team.playersCount ?? team.playersPerTeam,
       birdies: team.birdies,
       holesRemaining: team.holesRemaining,
@@ -289,6 +336,143 @@ class NewGameController extends GetxController {
     } else if (Get.isBottomSheetOpen ?? false) {
       Get.back();
     }
+  }
+
+  Future<void> saveDraftIfNeeded() async {
+    if (_isSubmitting) return;
+    final trimmedName = nameController.text.trim();
+    final hasData = trimmedName.isNotEmpty || showTeams;
+    if (!hasData) return;
+    final nav = Get.find<ClubAdminBottomNavController>();
+    if (!nav.guardClubAccess()) return;
+    final clubId = await _loadClubId();
+    if (clubId == null || clubId.isEmpty) return;
+
+    final teamsPayload = List.generate(generatedTeams.length, (index) {
+      final team = generatedTeams[index];
+      final players = teamPlayers[index];
+      final teamName = teamNameControllers.length > index
+          ? teamNameControllers[index].text.trim()
+          : (team.name ?? "Team ${index + 1}");
+      return {
+        'name': teamName.isEmpty ? "Team ${index + 1}" : teamName,
+        'totalGames': 0,
+        'avgBirdies': 0,
+        'totalWins': 0,
+        'topScores': 0,
+        'teamBirdies': 0,
+        'createdAt': DateTime.now().toIso8601String(),
+        'members': players.map((p) => p.toMap()).toList(),
+      };
+    });
+
+    final draftPayload = {
+      'clubId': clubId,
+      'name': trimmedName.isEmpty ? "Draft Game" : trimmedName,
+      'date': DateFormat('yyyy-MM-dd').format(DateTime.now()),
+      'passkey': '',
+      'status': GameStatus.draft.name,
+      'teamsCount': generatedTeams.length,
+      'playersPerTeam': playersPerTeam,
+      'teams': teamsPayload,
+      'updatedAt': FieldValue.serverTimestamp(),
+      if (_draftGameId == null) 'createdAt': FieldValue.serverTimestamp(),
+    };
+
+    if (_draftGameId == null) {
+      final ref =
+          await FirebaseFirestore.instance.collection('games').add(draftPayload);
+      _draftGameId = ref.id;
+    } else {
+      await FirebaseFirestore.instance
+          .collection('games')
+          .doc(_draftGameId)
+          .set(draftPayload, SetOptions(merge: true));
+    }
+  }
+
+  Future<String?> _loadClubId() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    return userDoc.data()?['clubId']?.toString();
+  }
+
+  Future<void> loadDraftById(String gameId) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('games')
+        .doc(gameId)
+        .get();
+    final data = snapshot.data();
+    if (data == null) return;
+    _draftGameId = gameId;
+    nameController.text = (data['name'] ?? '').toString();
+    playersPerTeam = (data['playersPerTeam'] ?? 2) as int? ?? 2;
+    final rawTeams = data['teams'];
+    if (rawTeams is List) {
+      teams = rawTeams.length;
+      generatedTeams = [];
+      teamPlayers = [];
+      for (final team in rawTeams) {
+        if (team is Map<String, dynamic>) {
+          final name = (team['name'] ?? '').toString();
+          final members = team['members'];
+          final players = <TeamPlayer>[];
+          if (members is List) {
+            for (final member in members) {
+              if (member is Map<String, dynamic>) {
+                players.add(
+                  TeamPlayer(
+                    uid: (member['uid'] ?? '').toString(),
+                    name: (member['name'] ?? '').toString(),
+                    email: (member['email'] ?? '').toString(),
+                  ),
+                );
+              }
+            }
+          }
+          generatedTeams.add(
+            TeamModel(
+              name: name.isEmpty ? null : name,
+              playersCount: playersPerTeam,
+              playersPerTeam: playersPerTeam,
+              joinedPlayers: players.length,
+            ),
+          );
+          teamPlayers.add(players);
+        }
+      }
+      for (final controller in teamNameControllers) {
+        controller.dispose();
+      }
+      teamNameControllers
+        ..clear()
+        ..addAll(
+          List.generate(
+            generatedTeams.length,
+            (index) => TextEditingController(
+              text: generatedTeams[index].name ?? "Team ${index + 1}",
+            ),
+          ),
+        );
+      showTeams = generatedTeams.isNotEmpty;
+    }
+    update();
+  }
+
+  void resetForm() {
+    nameController.clear();
+    teams = 4;
+    playersPerTeam = 2;
+    showTeams = false;
+    generatedTeams = [];
+    teamPlayers = [];
+    for (final controller in teamNameControllers) {
+      controller.dispose();
+    }
+    teamNameControllers.clear();
+    update();
   }
 }
 

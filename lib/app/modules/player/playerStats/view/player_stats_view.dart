@@ -13,8 +13,14 @@ import 'package:get/get.dart';
 class PlayerStatsView extends GetView<PlayerStatsController> {
   final VoidCallback onBack;
   final Color? color;
+  final Map<String, dynamic>? playerData;
 
-  const PlayerStatsView({super.key, required this.onBack, required this.color});
+  const PlayerStatsView({
+    super.key,
+    required this.onBack,
+    required this.color,
+    this.playerData,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -49,9 +55,14 @@ class PlayerStatsView extends GetView<PlayerStatsController> {
                         ),
                       ),
                       Text(
-                        "Player Name",
+                        (playerData?['name'] ?? "Player Name").toString(),
                         style: AppTextStyles.bodyLarge.copyWith(fontSize: 18),
                       ),
+                      if ((playerData?['email'] ?? '').toString().isNotEmpty)
+                        Text(
+                          (playerData?['email'] ?? '').toString(),
+                          style: AppTextStyles.bodySmall,
+                        ),
                       Container(
                         padding: EdgeInsets.symmetric(
                           horizontal: 10,
