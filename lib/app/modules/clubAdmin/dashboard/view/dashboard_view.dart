@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
 
 class ClubAdminDashboard extends StatelessWidget {
   const ClubAdminDashboard({super.key});
@@ -33,10 +34,28 @@ class ClubAdminDashboard extends StatelessWidget {
             ),
             child: Column(
               children: [
-                CustomProfileBar(
-                  name: "Club Admin",
-                  onTap: () {},
-                  bgImg: "assets/images/dashboard_img.png",
+                StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(FirebaseAuth.instance.currentUser?.uid ?? 'missing')
+                      .snapshots(),
+                  builder: (context, userSnapshot) {
+                    final userData = userSnapshot.data?.data() ?? {};
+                    final name = (userData['displayName'] ??
+                            userData['name'] ??
+                            'Club Admin')
+                        .toString();
+                    final photoBase64 =
+                        (userData['photoBase64'] ?? '').toString();
+                    return CustomProfileBar(
+                      name: name,
+                      onTap: () {},
+                      bgImg: "assets/images/dashboard_img.png",
+                      imageProvider: photoBase64.isNotEmpty
+                          ? MemoryImage(base64Decode(photoBase64))
+                          : null,
+                    );
+                  },
                 ),
                 SizedBox(height: 30.h),
                 Row(
@@ -84,7 +103,76 @@ class ClubAdminDashboard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                buildCustomGrid(),
+                StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(FirebaseAuth.instance.currentUser?.uid ?? 'missing')
+                      .snapshots(),
+                  builder: (context, userSnapshot) {
+                    if (userSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    final userData = userSnapshot.data?.data() ?? {};
+                    final clubId = (userData['clubId'] ?? '').toString();
+                    if (clubId.isEmpty) {
+                      return buildCustomGrid(
+                        activeGames: 0,
+                        totalTeams: 0,
+                        totalPlayers: 0,
+                        completedGames: 0,
+                      );
+                    }
+                    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                      stream: FirebaseFirestore.instance
+                          .collection('games')
+                          .where('clubId', isEqualTo: clubId)
+                          .snapshots(),
+                      builder: (context, gamesSnapshot) {
+                        if (gamesSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Center(child: CircularProgressIndicator());
+                        }
+                        final games = gamesSnapshot.data?.docs ?? [];
+                        int activeGames = 0;
+                        int completedGames = 0;
+                        int totalTeams = 0;
+                        int totalPlayers = 0;
+
+                        for (final doc in games) {
+                          final data = doc.data();
+                          final status =
+                              (data['status'] ?? 'active').toString();
+                          if (status == 'active') {
+                            activeGames++;
+                          }
+                          if (status == 'completed') {
+                            completedGames++;
+                          }
+                          final teams = data['teams'];
+                          if (teams is List) {
+                            totalTeams += teams.length;
+                            for (final team in teams) {
+                              if (team is Map<String, dynamic>) {
+                                final members = team['members'];
+                                if (members is List) {
+                                  totalPlayers += members.length;
+                                }
+                              }
+                            }
+                          }
+                        }
+
+                        return buildCustomGrid(
+                          activeGames: activeGames,
+                          totalTeams: totalTeams,
+                          totalPlayers: totalPlayers,
+                          completedGames: completedGames,
+                        );
+                      },
+                    );
+                  },
+                ),
                 SizedBox(height: 10),
                 ReportsAndAnalyticsDashboard(),
                 Text(

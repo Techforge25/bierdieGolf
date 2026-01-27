@@ -41,10 +41,16 @@ class NewGameView extends GetView<NewGameController> {
                   SizedBox(height: 20.h),
 
                   /// GAME NAME
+                  Text(
+                    "Game Name",
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
                   CustomFormField(
                     controller: controller.nameController,
-                    hint: "Enter Game Name",
-                    label: "Game name",
+                    hint: "Enter game name",
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(color: AppColors.borderColorLight),
                     bgcolor: AppColors.white,
@@ -54,7 +60,7 @@ class NewGameView extends GetView<NewGameController> {
 
                   /// COUNTER BOX
                   Container(
-                    padding: EdgeInsets.all(16),
+                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: AppColors.white,
                       border: Border.all(color: AppColors.borderColorLight),
@@ -69,7 +75,7 @@ class NewGameView extends GetView<NewGameController> {
                           minValue: 2,
                           maxValue: 8,
                           icon: Icons.groups,
-                          iconBgColor: Colors.green,
+                          iconBgColor: AppColors.primary,
                           onIncrement: controller.incrementTeams,
                           onDecrement: controller.decrementTeams,
                         ),
@@ -83,7 +89,7 @@ class NewGameView extends GetView<NewGameController> {
                           minValue: 2,
                           maxValue: 4,
                           icon: Icons.person,
-                          iconBgColor: Colors.blue,
+                          iconBgColor: AppColors.darkBlue,
                           onIncrement: controller.incrementPlayersPerTeam,
                           onDecrement: controller.decrementPlayersPerTeam,
                         ),

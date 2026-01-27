@@ -3,7 +3,12 @@
   import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-  Widget buildCustomGrid() {
+  Widget buildCustomGrid({
+  required int activeGames,
+  required int totalTeams,
+  required int totalPlayers,
+  required int completedGames,
+}) {
   return GridView.count(
     shrinkWrap: true,
     physics: const NeverScrollableScrollPhysics(),
@@ -14,23 +19,23 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
     children: [
       statCard(
         title: "Active Games",
-        value: "25",
+        value: activeGames.toString(),
         imagePath: "assets/images/banda.png",
       ),
       statCard(
         title: "Total Teams",
-        value: "12",
+        value: totalTeams.toString(),
         imagePath: "assets/images/golf_ball.png",
       ),
       statCard(
         title: "Total Players",
-        value: "8",
+        value: totalPlayers.toString(),
         imagePath: "assets/images/excited_banda.png",
 
       ),
       statCard(
         title: "Completed",
-        value: "3",
+        value: completedGames.toString(),
         imagePath: "assets/images/golf_ka_saman.png",
       ),
     ],

@@ -48,7 +48,7 @@ class ClubAdminBottomNav extends StatelessWidget {
                 index: 2,
                 ),
               _navItem(
-                icon: Icons.leaderboard_outlined,
+                icon: Icons.emoji_events_outlined,
                 label: "Scores",
                 index: 3,
               ),

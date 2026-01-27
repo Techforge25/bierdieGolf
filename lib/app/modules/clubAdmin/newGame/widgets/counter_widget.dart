@@ -33,9 +33,16 @@ class CounterSettingTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -70,7 +77,7 @@ class CounterSettingTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: Colors.grey.shade700,
-                    fontWeight: FontWeight.w700
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -78,35 +85,29 @@ class CounterSettingTile extends StatelessWidget {
           ),
 
           // COUNTER
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                _actionButton(
-                  icon: Icons.remove,
-                  enabled: canDecrease,
-                  onTap: onDecrement,
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Text(
-                    value.toString(),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+          Row(
+            children: [
+              _actionButton(
+                icon: Icons.remove,
+                enabled: canDecrease,
+                onTap: onDecrement,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Text(
+                  value.toString(),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                _actionButton(
-                  icon: Icons.add,
-                  enabled: canIncrease,
-                  onTap: onIncrement,
-                ),
-              ],
-            ),
+              ),
+              _actionButton(
+                icon: Icons.add,
+                enabled: canIncrease,
+                onTap: onIncrement,
+              ),
+            ],
           ),
         ],
       ),
@@ -120,11 +121,18 @@ class CounterSettingTile extends StatelessWidget {
   }) {
     return InkWell(
       onTap: enabled ? onTap : null,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        height: 28,
+        width: 28,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
         child: Icon(
           icon,
-          size: 18,
+          size: 16,
           color: enabled ? Colors.black : Colors.grey.shade400,
         ),
       ),

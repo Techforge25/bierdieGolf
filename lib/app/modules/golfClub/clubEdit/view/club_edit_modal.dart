@@ -9,6 +9,7 @@ import 'package:bierdygame/app/widgets/custom_text_field.dart';
 import 'package:bierdygame/app/widgets/modal_footer_btn.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dotted_border/dotted_border.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -60,39 +61,37 @@ class ClubEditModal extends GetView<ClubEditController> {
               final data = admins[index].data();
               final name = (data['displayName'] ?? 'Admin').toString();
               final email = (data['email'] ?? '').toString();
+              final isCurrentUser =
+                  admins[index].id == FirebaseAuth.instance.currentUser?.uid;
               final isActive =
                   data['isActive'] == null ? true : data['isActive'] == true;
               return ListTile(
                 leading: const CircleAvatar(),
                 title: Text(name, style: AppTextStyles.bodyMedium),
                 subtitle: Text(email),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.edit_outlined, color: AppColors.primary),
-                      onPressed: () {
-                        Get.toNamed(
-                          Routes.ADMIN_VIEW,
-                          arguments: {
-                            'adminId': admins[index].id,
-                            'name': name,
-                            'email': email,
-                            'clubId': clubId,
-                            'clubName': controller.initialName,
-                            'role': 'club_admin',
-                            'isActive': isActive,
-                          },
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.delete, color: AppColors.darkRed),
-                      onPressed: () =>
-                          controller.removeAdminFromClub(admins[index].id),
-                    ),
-                  ],
-                ),
+                trailing: isCurrentUser
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                        onPressed: () {
+                          Get.toNamed(
+                            Routes.ADMIN_VIEW,
+                            arguments: {
+                              'adminId': admins[index].id,
+                              'name': name,
+                              'email': email,
+                              'clubId': clubId,
+                              'clubName': controller.initialName,
+                              'role': 'club_admin',
+                              'isActive': isActive,
+                            },
+                          );
+                        },
+                      )
+                    : null,
               );
             },
           ),
@@ -104,7 +103,7 @@ class ClubEditModal extends GetView<ClubEditController> {
   @override
   Widget build(BuildContext context) {
     return CustomModal(
-      title: "Club Edit",
+      title: "Profile Edit",
       content: SingleChildScrollView(
         child: Column(
           spacing: 10.0,
@@ -339,6 +338,7 @@ class ClubEditModal extends GetView<ClubEditController> {
                   decoration: BoxDecoration(
                     color: AppColors.flashyGreen,
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.primary),
                   ),
                   alignment: Alignment.center,
                   child: Text(

@@ -65,6 +65,8 @@ class GolfClubProfilePage extends StatelessWidget {
                   userSnapshot.data?.data()?['role']?.toString().toLowerCase();
               final isSuperAdmin =
                   role == 'super_admin' || role == 'superadmin';
+              final isClubAdmin = role == 'club_admin';
+              final canEditClub = isSuperAdmin || isClubAdmin;
               return ListView(
                 children: [
                   clubId.isEmpty
@@ -73,7 +75,7 @@ class GolfClubProfilePage extends StatelessWidget {
                           nameOfClub: nameOfClub,
                           clubId: clubId,
                           clubLocation: clubLocation,
-                          showEdit: isSuperAdmin,
+                          showEdit: canEditClub,
                         )
                       : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                           stream: controller.clubStream(clubId),
@@ -92,7 +94,7 @@ class GolfClubProfilePage extends StatelessWidget {
                               clubLocation: location,
                               clubLogoPath: logoPath,
                               clubLogoBase64: logoBase64,
-                              showEdit: isSuperAdmin,
+                              showEdit: canEditClub,
                             );
                           },
                         ),

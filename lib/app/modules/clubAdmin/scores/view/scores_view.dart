@@ -36,16 +36,34 @@ class ScoresView extends GetView<ScoresController> {
             children: [
               Center(
                 child: Text(
-                  "LeaderBoard",
+                  "Leaderboard",
                   style: AppTextStyles.bodyLarge.copyWith(fontSize: 18),
                 ),
               ),
               SizedBox(height: 10.h),
-              NotificationTabBar(
-                title1: "Team Rank",
-                title2: "Player Rank",
-                selectedIndex: controller.selectedTab.value,
-                onChanged: controller.changeTab,
+              Container(
+                padding: EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22.r),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Row(
+                  children: [
+                    _rankTab(
+                      title: "Teams Rank",
+                      index: 0,
+                      selectedIndex: controller.selectedTab.value,
+                      onChanged: controller.changeTab,
+                    ),
+                    _rankTab(
+                      title: "Players Rank",
+                      index: 1,
+                      selectedIndex: controller.selectedTab.value,
+                      onChanged: controller.changeTab,
+                    ),
+                  ],
+                ),
               ),
               SizedBox(height: 15.h),
               Expanded(
@@ -126,6 +144,7 @@ class ScoresView extends GetView<ScoresController> {
                                 (team['name'] ?? 'Team').toString();
                             final status =
                                 (team['gameStatus'] ?? 'active').toString();
+                            final wins = (team['totalWins'] ?? 0).toString();
                             return GestureDetector(
                               onTap: () {
                                 controller.openTeamRank(
@@ -135,29 +154,13 @@ class ScoresView extends GetView<ScoresController> {
                                   teamData: team,
                                 );
                               },
-                              child: Container(
-                                padding: EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: AppColors.flashyGreen,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppColors.primary),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Text("${index + 1}"),
-                                    SizedBox(width: 20.w),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(name),
-                                        Text("Status: $status"),
-                                      ],
-                                    ),
-                                    Spacer(),
-                                    Text(status),
-                                  ],
-                                ),
+                              child: _rankCard(
+                                rank: index + 1,
+                                title: name,
+                                subtitle: null,
+                                trailingValue: wins,
+                                trailingLabel: "Wins",
+                                rankType: _RankType.team,
                               ),
                             );
                           },
@@ -197,56 +200,41 @@ class ScoresView extends GetView<ScoresController> {
                         if (players.isEmpty) {
                           return Center(child: Text("No players found"));
                         }
-                        return ListView.separated(
-                          padding: EdgeInsets.only(top: 10.h),
-                          itemCount: players.length,
-                          separatorBuilder: (_, __) => SizedBox(height: 10.h),
-                          itemBuilder: (context, index) {
-                            final player = players[index];
-                            final name =
-                                (player['name'] ?? 'Player').toString();
-                            final email =
-                                (player['email'] ?? '').toString();
-                            return GestureDetector(
-                              onTap: () {
-                                controller.openPlayerRank(
-                                  name: (player['gameName'] ?? '').toString(),
-                                  status:
-                                      (player['gameStatus'] ?? '').toString(),
-                                  date: (player['gameDate'] ?? '').toString(),
-                                  playerData: player,
-                                );
-                              },
-                              child: Container(
-                                padding: EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: AppColors.flashyGreen,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppColors.primary),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Text("${index + 1}"),
-                                    SizedBox(width: 20.w),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(name),
-                                        if (email.isNotEmpty)
-                                          Text(email),
-                                      ],
-                                    ),
-                                    Spacer(),
-                                    Text("View"),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    );
+                      return ListView.separated(
+                        padding: EdgeInsets.only(top: 10.h),
+                        itemCount: players.length,
+                        separatorBuilder: (_, __) => SizedBox(height: 10.h),
+                        itemBuilder: (context, index) {
+                          final player = players[index];
+                          final name =
+                              (player['name'] ?? 'Player').toString();
+                          final teamName =
+                              (player['teamName'] ?? '').toString();
+                          final birdies =
+                              (player['birdies'] ?? 0).toString();
+                          return GestureDetector(
+                            onTap: () {
+                              controller.openPlayerRank(
+                                name: (player['gameName'] ?? '').toString(),
+                                status:
+                                    (player['gameStatus'] ?? '').toString(),
+                                date: (player['gameDate'] ?? '').toString(),
+                                playerData: player,
+                              );
+                            },
+                            child: _rankCard(
+                              rank: index + 1,
+                              title: name,
+                              subtitle: teamName.isEmpty ? null : teamName,
+                              trailingValue: birdies,
+                              trailingLabel: "B",
+                              rankType: _RankType.player,
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
                   },
                 ),
               ),
@@ -256,4 +244,104 @@ class ScoresView extends GetView<ScoresController> {
       );
     });
   }
+}
+
+enum _RankType { team, player }
+
+Widget _rankTab({
+  required String title,
+  required int index,
+  required int selectedIndex,
+  required ValueChanged<int> onChanged,
+}) {
+  final isSelected = index == selectedIndex;
+  return Expanded(
+    child: GestureDetector(
+      onTap: () => onChanged(index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(18.r),
+        ),
+        child: Center(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isSelected ? Colors.white : Colors.black87,
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+Widget _rankCard({
+  required int rank,
+  required String title,
+  required String? subtitle,
+  required String trailingValue,
+  required String trailingLabel,
+  required _RankType rankType,
+}) {
+  final color = rank == 1
+      ? AppColors.flashyGreen
+      : (rank == 2 ? AppColors.flashyYellow : AppColors.flashyblue);
+  final border = rank == 1
+      ? AppColors.primary
+      : (rank == 2 ? AppColors.secondary : AppColors.darkBlue);
+  return Container(
+    padding: EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: rank <= 3 ? color : Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: rank <= 3 ? border : Colors.grey.shade300),
+    ),
+    child: Row(
+      children: [
+        Text(
+          rank.toString(),
+          style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+        ),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: AppTextStyles.bodyMedium2),
+              if (subtitle != null)
+                Text(
+                  subtitle,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.borderColor,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              trailingValue,
+              style: AppTextStyles.bodyMedium2.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              trailingLabel,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.borderColor,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
 }

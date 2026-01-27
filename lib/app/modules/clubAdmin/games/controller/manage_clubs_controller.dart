@@ -9,6 +9,9 @@ class ManageClubsController extends GetxController {
   RxInt selectedTab = 0.obs;
   RxInt selectedGameTab = 0.obs;
   RxInt selectedLeaderboardTab = 0.obs;
+  RxInt gameDetailPage = 0.obs;
+  Rxn<Map<String, dynamic>> selectedTeamDetail = Rxn<Map<String, dynamic>>();
+  Rxn<Map<String, dynamic>> selectedPlayerDetail = Rxn<Map<String, dynamic>>();
   Rx<String?> selectedClub = Rx<String?>(null);
   final searchQuery = ''.obs;
   final searchController = TextEditingController();
@@ -127,6 +130,27 @@ void changeGameTab(int index) {
   }
   void changeLeaderboardTab(int index) {
     selectedLeaderboardTab.value = index;
+  }
+
+  void openTeamDetail(Map<String, dynamic> team) {
+    selectedTeamDetail.value = team;
+    gameDetailPage.value = 1;
+  }
+
+  void openPlayerDetail(Map<String, dynamic> player) {
+    selectedPlayerDetail.value = player;
+    gameDetailPage.value = 2;
+  }
+
+  void backToGameDetail() {
+    gameDetailPage.value = 0;
+    selectedTeamDetail.value = null;
+    selectedPlayerDetail.value = null;
+  }
+
+  void backToTeamDetail() {
+    gameDetailPage.value = 1;
+    selectedPlayerDetail.value = null;
   }
   void addGame(GameModel game) {
     games.insert(0, game); // latest on top
